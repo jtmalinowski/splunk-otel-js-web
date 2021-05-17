@@ -22,7 +22,6 @@ import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-clo
 import fetch from 'node-fetch';
 import { request } from '@octokit/request';
 
-const FULL_REPO_NAME = process.env.GITHUB_REPOSITORY;
 const PRERELEASE_KEYWORDS = ['alpha', 'beta', 'rc'];
 
 const isDryRun = process.argv.some(arg => arg === '--dry-run');
@@ -31,6 +30,7 @@ if (isDryRun) {
 }
 
 dotenv.config();
+const { GITHUB_REPOSITORY } = process.env;
 
 if (!process.env.CDN_DISTRIBUTION_ID) {
   throw new Error('You are missing an environment variable CDN_DISTRIBUTION_ID.');
@@ -48,7 +48,7 @@ const requestWithAuth = request.defaults({
   },
 });
 
-const { data: releases, status } = await requestWithAuth(`GET /repos/${FULL_REPO_NAME}/releases`);
+const { data: releases, status } = await requestWithAuth(`GET /repos/${GITHUB_REPOSITORY}/releases`);
 if (status >= 400) {
   throw new Error('There was an error while trying to fetch the list of releases.');
 }
@@ -59,7 +59,7 @@ if (!latestRelease) {
 }
 console.log(`I have found the latest version to be: ${latestRelease.tag_name} named "${latestRelease.name}."`);
 
-const { data: assets } = await requestWithAuth(`GET /repos/${FULL_REPO_NAME}/releases/${latestRelease.id}/assets`);
+const { data: assets } = await requestWithAuth(`GET /repos/${GITHUB_REPOSITORY}/releases/${latestRelease.id}/assets`);
 console.log(`This release has ${assets.length} release artifacts: ${assets.map(({name}) => name).join(', ')}.`);
 
 const baseVersion = latestRelease.tag_name;
